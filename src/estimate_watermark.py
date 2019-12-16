@@ -1,11 +1,12 @@
-import sys, os
-import cv2
-import numpy as np
-import warnings
-from matplotlib import pyplot as plt
 import math
+import os
+import warnings
+
+import cv2
 import numpy
-import scipy, scipy.fftpack
+import numpy as np
+import scipy
+import scipy.fftpack
 
 # Variables
 KERNEL_SIZE = 3

@@ -11,11 +11,13 @@ cropped_gx, cropped_gy = crop_watermark(gx, gy)
 W_m = poisson_reconstruct(cropped_gx, cropped_gy)
 
 # random photo
-img = cv2.imread('images/fotolia_processed/fotolia_137840668.jpg')
+img = cv2.imread('images/fotolia_processed/5592854432.jpg')
 im, start, end = watermark_detector(img, cropped_gx, cropped_gy)
 
-# plt.imshow(im)
-# plt.show()
+plt.imshow(im)
+plt.show()
+plt.imshow(W_m)
+plt.show()
 # We are done with watermark estimation
 # W_m is the cropped watermark
 num_images = len(gxlist)
@@ -28,8 +30,9 @@ idx = idx[:25]
 # Wm = (255*PlotImage(W_m))
 Wm = W_m - W_m.min()
 
+
 # get threshold of W_m for alpha matte estimate
-alph_est = estimate_normalized_alpha(J, Wm)
+alph_est = estimate_normalized_alpha(J, Wm, num_images)
 alph = np.stack([alph_est, alph_est, alph_est], axis=2)
 C, est_Ik = estimate_blend_factor(J, Wm, alph)
 
@@ -38,14 +41,34 @@ for i in range(3):
     alpha[:, :, i] = C[i] * alpha[:, :, i]
 
 Wm = Wm + alpha * est_Ik
+plt.imshow(Wm)
+plt.show()
 
 W = Wm.copy()
 for i in range(3):
     W[:, :, i] /= C[i]
 
 Jt = J[:25]
+Wm = None
+J = None
+alph = None
+alph_est = None
+cropped_gx = None
+cropped_gy = None
+est_Ik = None
+gx = None
+gxlist = None
+gy = None
+gylist = None
+im = None
+img = None
+
 # now we have the values of alpha, Wm, J
 # Solve for all images
+print(type(Jt))
+print(type(W_m))
+print(type(alpha))
+print(type(W))
 Wk, Ik, W, alpha1 = solve_images(Jt, W_m, alpha, W)
 # W_m_threshold = (255*PlotImage(np.average(W_m, axis=2))).astype(np.uint8)
 # ret, thr = cv2.threshold(W_m_threshold, 127, 255, cv2.THRESH_BINARY)

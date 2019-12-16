@@ -1,9 +1,11 @@
-import sys, os
+import os
+import sys
+
 import cv2
 import numpy as np
 
 
-def preprocess(foldername, size=500, suffix="_processed"):
+def preprocess(foldername, size=600, suffix="_processed"):
 
 	dest_folder = foldername + suffix
 	processed=os.path.abspath(dest_folder)
