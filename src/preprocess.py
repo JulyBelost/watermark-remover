@@ -1,6 +1,5 @@
 import os
 import sys
-
 import cv2
 import numpy as np
 
@@ -11,7 +10,7 @@ def preprocess(foldername, size=600, suffix="_processed"):
 	processed=os.path.abspath(dest_folder)
 
 	if os.path.exists(processed):
-		print ("Directory %s already exists."%(processed))
+		print("Directory %s already exists."%(processed))
 		return None
 		
 	os.mkdir(dest_folder)

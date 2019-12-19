@@ -16,7 +16,6 @@ def estimate_watermark(foldername):
 	Given a folder, estimate the watermark (grad(W) = median(grad(J)))
 	Also, give the list of gradients, so that further processing can be done on it
 	"""
-	# foldername = './images/fotolia_processed'
 	if not os.path.exists(foldername):
 		warnings.warn("Folder does not exist.", UserWarning)
 		return None
@@ -151,7 +150,7 @@ def crop_watermark(gradx, grady, threshold=0.4, boundary_size=2):
 	xm, xM = np.min(x) - boundary_size - 1, np.max(x) + boundary_size + 1
 	ym, yM = np.min(y) - boundary_size - 1, np.max(y) + boundary_size + 1
 
-	return gradx[xm:xM, ym:yM, :] , grady[xm:xM, ym:yM, :]
+	return gradx[xm:xM, ym:yM, :], grady[xm:xM, ym:yM, :]
 
 
 def normalized(img):

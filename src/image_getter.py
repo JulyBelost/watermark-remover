@@ -1,9 +1,9 @@
 import os
 import argparse
 import requests
-from threading import Thread
 import psycopg2
 import json
+from threading import Thread
 from src.config import hostname, password, username, database
 
 
@@ -71,9 +71,6 @@ def database_connect():
                             dbname=database)
 
 
-''' 
-Main function here
-'''
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Scrape from stock images')
     parser.add_argument('-f', dest='folder', help='Specify the folder where to place the images.')
