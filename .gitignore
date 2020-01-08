@@ -7,5 +7,5 @@ Dekel_*
 *.pyc
 *.pdf
 *.bmp
-*.ipynb
 *.npc
+/src/config.py

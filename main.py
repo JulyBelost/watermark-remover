@@ -4,29 +4,44 @@ from src.preprocess import *
 from src.image_getter import *
 from src.watermark_reconstruct import *
 
+# GET IMAGES ----------------------------------------------------------
 # folder name of preprocessed images with watermarks
-directory = './images_dataset/prepared'
+dir_images = './images_dataset/img_prepared'
+dir_images_raw = './images_dataset/img_raw'
+files_number = 100
+image_size = 1280
 
-if not os.path.isdir(directory):
-    os.mkdir(directory)
+if not os.path.isdir(dir_images):
+    os.mkdir(dir_images)
 
-files = os.listdir(directory)
+files = os.listdir(dir_images)
 
 if len(files) == 0:
-    files_number = 100
-    photo_scrape(directory + '/../raw', files_number)
+    if not os.path.isdir(dir_images_raw):
+        os.mkdir(dir_images_raw)
 
-grad_x, grad_y, grad_xlist, grad_ylist = estimate_watermark('./images_dataset/preparedd')
+    files_raw = os.listdir(dir_images_raw)
 
-# est = poisson_reconstruct(grad_x, grad_y, np.zeros(grad_x.shape)[:,:,0])
-cropped_grad_x, cropped_grad_y = crop_watermark(grad_x, grad_y)
-W_m = poisson_reconstruct(cropped_grad_x, cropped_grad_y)
+    if len(files_raw) == 0:
+        photo_scrape(dir_images_raw, files_number)
+    else:
+        print("All files downloaded")
+
+    preprocess(dir_images_raw, dir_images, image_size)
+else:
+    print("All files prepared")
+# -------------------------------------------------------------------------
+
+# INITIAL WATERMARK DETECTION ---------------------------------------------
+Wm_x, Wm_y, grad_x_list, grad_y_list = estimate_watermark(dir_images)
+cropped_Wm_x, cropped_Wm_y = crop_watermark(Wm_x, Wm_y)
+W_m = poisson_reconstruct(cropped_Wm_x, cropped_Wm_y)
+# est = poisson_reconstruct(Wm_x, Wm_y, np.zeros(Wm_x.shape)[:,:,0])
 
 # random photo
-img = cv2.imread('images/fotolia_processed/5592854432.jpg')
-plt.imshow(img)
-plt.show()
-im, start, end = watermark_detector(img, cropped_grad_x, cropped_grad_y)
+img = cv2.imread('images_dataset/img_prepared/2955553350.jpg')
+im, start, end = watermark_detector(img, cropped_Wm_x, cropped_Wm_y)
+im_size = Wm_x.nbytes
 
 plt.imshow(im)
 plt.show()
@@ -34,16 +49,17 @@ plt.imshow(W_m)
 plt.show()
 # We are done with watermark estimation
 # W_m is the cropped watermark
-num_images = len(grad_xlist)
+num_images = len(grad_x_list)
 
 J, img_paths = get_cropped_images(
-    'images/fotolia_processed', num_images, start, end, cropped_grad_x.shape)
+    'images/fotolia_processed', num_images, start, end, cropped_Wm_x.shape)
 # get a random subset of J
-idx = [389, 144, 147, 468, 423, 92, 3, 354, 196, 53, 470, 445, 314, 349, 105, 366, 56, 168, 351, 15, 465, 368, 90, 96, 202, 54, 295, 137, 17, 79, 214, 413, 454, 305, 187, 4, 458, 330, 290, 73, 220, 118, 125, 180, 247, 243, 257, 194, 117, 320, 104, 252, 87, 95, 228, 324, 271, 398, 334, 148, 425, 190, 78, 151, 34, 310, 122, 376, 102, 260]
+idx = [389, 144, 147, 468, 423, 92, 3, 354, 196, 53, 470, 445, 314, 349, 105, 366, 56, 168, 351, 15, 465, 368, 90, 96,
+       202, 54, 295, 137, 17, 79, 214, 413, 454, 305, 187, 4, 458, 330, 290, 73, 220, 118, 125, 180, 247, 243, 257, 194,
+       117, 320, 104, 252, 87, 95, 228, 324, 271, 398, 334, 148, 425, 190, 78, 151, 34, 310, 122, 376, 102, 260]
 idx = idx[:25]
 # Wm = (255*PlotImage(W_m))
 Wm = W_m - W_m.min()
-
 
 # get threshold of W_m for alpha matte estimate
 alph_est = estimate_normalized_alpha(J, Wm, num_images)
@@ -67,13 +83,13 @@ Wm = None
 J = None
 alph = None
 alph_est = None
-cropped_grad_x = None
-cropped_grad_y = None
+cropped_Wm_x = None
+cropped_Wm_y = None
 est_Ik = None
-grad_x = None
-grad_xlist = None
-grad_y = None
-grad_ylist = None
+Wm_x = None
+grad_x_list = None
+Wm_y = None
+grad_y_list = None
 im = None
 img = None
 
