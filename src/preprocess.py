@@ -16,7 +16,6 @@ def preprocess(raw_dir, dest_dir, size):
 			final_img = np.pad(img, ((m_t, size-m-m_t), (n_t, size-n-n_t), (0, 0)), mode='constant')
 			cv2.imwrite(os.sep.join([dest_dir, file]), final_img)
 			print("Saved to : %s"%(file))
-			print(final_img.shape)
 
 
 if __name__ == "__main__":

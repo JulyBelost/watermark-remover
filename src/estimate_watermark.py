@@ -41,7 +41,9 @@ def estimate_watermark(directory):
     Wm_x = np.median(np.array(grad_x), axis=0)
     Wm_y = np.median(np.array(grad_y), axis=0)
 
-    return Wm_x, Wm_y, grad_x, grad_y
+    num_images = len(grad_x)
+
+    return Wm_x, Wm_y, num_images
 
 
 def crop_watermark(grad_x, grad_y, threshold=0.4, boundary_size=2):

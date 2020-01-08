@@ -1,14 +1,20 @@
 import cv2
+import os
+import random as rnd
 from src.estimate_watermark import *
 from src.preprocess import *
 from src.image_getter import *
 from src.watermark_reconstruct import *
 
 # GET IMAGES ----------------------------------------------------------
+# Download random images from database
+# and prepare them for the main process(make same shape)
+# if there is no any yet
+#
 # folder name of preprocessed images with watermarks
 dir_images = './images_dataset/img_prepared'
 dir_images_raw = './images_dataset/img_raw'
-files_number = 100
+files_number = 25
 image_size = 1280
 
 if not os.path.isdir(dir_images):
@@ -33,13 +39,14 @@ else:
 # -------------------------------------------------------------------------
 
 # INITIAL WATERMARK DETECTION ---------------------------------------------
-Wm_x, Wm_y, grad_x_list, grad_y_list = estimate_watermark(dir_images)
+Wm_x, Wm_y, num_images = estimate_watermark(dir_images)
 cropped_Wm_x, cropped_Wm_y = crop_watermark(Wm_x, Wm_y)
 W_m = poisson_reconstruct(cropped_Wm_x, cropped_Wm_y)
 # est = poisson_reconstruct(Wm_x, Wm_y, np.zeros(Wm_x.shape)[:,:,0])
-
+img_name = rnd.choice(os.listdir(dir_images))
+sample = os.path.join(dir_images, img_name)
 # random photo
-img = cv2.imread('images_dataset/img_prepared/2955553350.jpg')
+img = cv2.imread(sample)
 im, start, end = watermark_detector(img, cropped_Wm_x, cropped_Wm_y)
 im_size = Wm_x.nbytes
 
@@ -49,7 +56,6 @@ plt.imshow(W_m)
 plt.show()
 # We are done with watermark estimation
 # W_m is the cropped watermark
-num_images = len(grad_x_list)
 
 J, img_paths = get_cropped_images(
     'images/fotolia_processed', num_images, start, end, cropped_Wm_x.shape)
@@ -87,9 +93,7 @@ cropped_Wm_x = None
 cropped_Wm_y = None
 est_Ik = None
 Wm_x = None
-grad_x_list = None
 Wm_y = None
-grad_y_list = None
 im = None
 img = None
 
