@@ -114,7 +114,7 @@ def get_xSobel_matrix(m, n, p):
 # get estimated normalized alpha matte
 def estimate_normalized_alpha(J, W_m, num_images, threshold=170, invert=False, adaptive=False, adaptive_threshold=21,
                               c2=10):
-    _Wm = (255 * PlotImage(np.average(W_m, axis=2))).astype(np.uint8)
+    _Wm = (255 * to_plot_normalize_image(np.average(W_m, axis=2))).astype(np.uint8)
     if adaptive:
         thr = cv2.adaptiveThreshold(_Wm, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, adaptive_threshold, c2)
     else:
@@ -250,7 +250,6 @@ def solve_images(J, W_m, alpha, W_init, gamma=1, beta=1, lambda_w=0.005, lambda_
 
             b = np.hstack([bW, bI])
 
-
             phi_f = None
             alphaWk = None
             phi_aux = None
@@ -261,16 +260,17 @@ def solve_images(J, W_m, alpha, W_init, gamma=1, beta=1, lambda_w=0.005, lambda_
             phi_rW = None
             A_f = None
             phi_data = None
+
             x = linalg.spsolve(A, b)
 
             Wk[i] = x[:size].reshape(m, n, p)
             Ik[i] = x[size:].reshape(m, n, p)
             plt.subplot(3, 1, 1);
-            plt.imshow(PlotImage(J[i]))
+            plt.imshow(to_plot_normalize_image(J[i]))
             plt.subplot(3, 1, 2);
-            plt.imshow(PlotImage(Wk[i]))
+            plt.imshow(to_plot_normalize_image(Wk[i]))
             plt.subplot(3, 1, 3);
-            plt.imshow(PlotImage(Ik[i]))
+            plt.imshow(to_plot_normalize_image(Ik[i]))
             plt.draw()
             plt.pause(0.001)
             print(i)
@@ -279,7 +279,7 @@ def solve_images(J, W_m, alpha, W_init, gamma=1, beta=1, lambda_w=0.005, lambda_
         print("Step 2")
         W = np.median(Wk, axis=0)
 
-        plt.imshow(PlotImage(W))
+        plt.imshow(to_plot_normalize_image(W))
         plt.draw()
         plt.pause(0.001)
 
@@ -314,7 +314,7 @@ def solve_images(J, W_m, alpha, W_init, gamma=1, beta=1, lambda_w=0.005, lambda_
 
         alpha = linalg.spsolve(A1, b1).reshape(m, n, p)
 
-        plt.imshow(PlotImage(alpha))
+        plt.imshow(to_plot_normalize_image(alpha))
         plt.draw()
         plt.pause(0.001)
 

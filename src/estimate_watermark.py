@@ -54,8 +54,8 @@ def crop_watermark(grad_x, grad_y, threshold=0.4, boundary_size=2):
     @param: boundary_size - boundary around cropped images
     """
     W_mod = np.sqrt(np.square(grad_x) + np.square(grad_y))
-    W_mod = plot_image(W_mod)
-    W_gray = image_threshold(np.average(W_mod, axis=2), threshold=threshold)
+    W_mod = to_plot_normalize_image(W_mod)
+    W_gray = threshold_image(np.average(W_mod, axis=2), threshold=threshold)
     x, y = np.where(W_gray == 1)
 
     xm, xM = np.min(x) - boundary_size - 1, np.max(x) + boundary_size + 1
@@ -77,7 +77,7 @@ def poisson_reconstruct(grad_x, grad_y, kernel_size=KERNEL_SIZE, num_iters=100, 
     laplacian = fxx + fyy
     m, n, p = laplacian.shape
 
-    if boundary_zero == True:
+    if boundary_zero:
         est = np.zeros(laplacian.shape)
     else:
         assert (boundary_image is not None)
@@ -96,27 +96,31 @@ def poisson_reconstruct(grad_x, grad_y, kernel_size=KERNEL_SIZE, num_iters=100, 
         error = np.sum(np.square(est - old_est))
         loss.append(error)
 
-    return (est)
+    return est
 
 
-def poisson_reconstruct2(grad_x, grad_y, boundarysrc):
+def poisson_reconstruct2(grad_x, grad_y, boundarysrc=None):
     # Thanks to Dr. Ramesh Raskar for providing the original matlab code from which this is derived
     # Dr. Raskar's version is available here: http://web.media.mit.edu/~raskar/photo/code.pdf
 
     # Laplacian
     gyy = grad_y[1:, :-1] - grad_y[:-1, :-1]
     gxx = grad_x[:-1, 1:] - grad_x[:-1, :-1]
+
+    if boundarysrc is None:
+        boundarysrc = numpy.zeros((grad_y).shape)
+
     f = numpy.zeros(boundarysrc.shape)
     f[:-1, 1:] += gxx
     f[1:, :-1] += gyy
 
     # Boundary images
     boundary = boundarysrc.copy()
-    boundary[1:-1, 1:-1] = 0;
+    boundary[1:-1, 1:-1] = 0
 
     # Subtract boundary contribution
-    f_bp = -4 * boundary[1:-1, 1:-1] + boundary[1:-1, 2:] + boundary[1:-1, 0:-2] + boundary[2:, 1:-1] + boundary[0:-2,
-                                                                                                        1:-1]
+    f_bp = -4 * boundary[1:-1, 1:-1] + boundary[1:-1, 2:] + boundary[1:-1, 0:-2] + boundary[2:, 1:-1] + \
+        boundary[0:-2, 1:-1]
     f = f[1:-1, 1:-1] - f_bp
 
     # Discrete Sine Transform
@@ -127,7 +131,7 @@ def poisson_reconstruct2(grad_x, grad_y, boundarysrc):
     (x, y) = numpy.meshgrid(range(1, f.shape[1] + 1), range(1, f.shape[0] + 1), copy=True)
     denom = (2 * numpy.cos(math.pi * x / (f.shape[1] + 2)) - 2) + (2 * numpy.cos(math.pi * y / (f.shape[0] + 2)) - 2)
 
-    f = fsin / denom
+    f = numpy.divide(fsin, denom[:, :, None])
 
     # Inverse Discrete Sine Transform
     tt = scipy.fftpack.idst(f, norm='ortho')
@@ -162,30 +166,29 @@ def watermark_detector(img, gx, gy, thresh_low=200, thresh_high=220, printval=Fa
     return im, (x, y), (rect[0], rect[1])
 
 
-def plot_image(image):
+def to_plot_normalize_image(image):
     """
-    plot_image: Give a normalized images matrix which can be used with implot, etc.
+    to_plot_normalize_image: Give a normalized images matrix which can be used with implot, etc.
     Maps to [0, 1]
     """
-    im = image.astype(float)
-    return (im - np.min(im)) / (np.max(im) - np.min(im))
+    img = image.astype(float)
+    return (img - np.min(img)) / (np.max(img) - np.min(img))
 
 
-def image_threshold(image, threshold=0.5):
+def threshold_image(image, threshold=0.5):
     """
     Threshold the images to make all its elements greater than threshold*MAX = 1
     """
-    m, M = np.min(image), np.max(image)
-    im = plot_image(image)
-    im[im >= threshold] = 1
-    im[im < 1] = 0
-    return im
+    img = to_plot_normalize_image(image)
+    img[img >= threshold] = 1
+    img[img < 1] = 0
+    return img
 
 
-def normalized(img):
+def normalized(image):
     """
     Return the images between -1 to 1 so that its easier to find out things like
     correlation between images, convolutionss, etc.
     Currently required for Chamfer distance for template matching.
     """
-    return 2 * plot_image(img) - 1
+    return 2 * to_plot_normalize_image(image) - 1
