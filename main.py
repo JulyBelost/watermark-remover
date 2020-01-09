@@ -61,7 +61,7 @@ img_marked, wm_start, wm_end = watermark_detector(img_sample, cropped_Wm_x, crop
 # -------------------------------------------------------------------------
 
 # plotting images
-images_for_plotting = [img_marked, W_m, cropped_Wm_x, cropped_Wm_y]
+images_for_plotting = [img_marked, W_m]
 
 for img in images_for_plotting:
     img_res = img[:, :, ::-1]
@@ -80,6 +80,12 @@ idx = [389, 144, 147, 468, 423, 92, 3, 354, 196, 53, 470, 445, 314, 349, 105, 36
        202, 54, 295, 137, 17, 79, 214, 413, 454, 305, 187, 4, 458, 330, 290, 73, 220, 118, 125, 180, 247, 243, 257, 194,
        117, 320, 104, 252, 87, 95, 228, 324, 271, 398, 334, 148, 425, 190, 78, 151, 34, 310, 122, 376, 102, 260]
 idx = idx[:25]
+# for img in J:
+#     img_res = img[:, :, ::-1]
+#     plt.figure(dpi=600)
+#     plt.imshow(img_res)
+#     plt.xticks([]), plt.yticks([])
+#     plt.show()
 # Wm = (255*to_plot_normalize_image(W_m))
 Wm = W_m - W_m.min()
 
@@ -93,7 +99,11 @@ for i in range(3):
     alpha[:, :, i] = C[i] * alpha[:, :, i]
 
 Wm = Wm + alpha * est_Ik
+
+img_res = Wm[:, :, ::-1]
+plt.figure(dpi=600)
 plt.imshow(Wm)
+plt.xticks([]), plt.yticks([])
 plt.show()
 
 W = Wm.copy()

@@ -74,6 +74,8 @@ def poisson_reconstruct(grad_x, grad_y, kernel_size=KERNEL_SIZE, num_iters=100, 
     """
     fxx = cv2.Sobel(grad_x, cv2.CV_64F, 1, 0, ksize=kernel_size)
     fyy = cv2.Sobel(grad_y, cv2.CV_64F, 0, 1, ksize=kernel_size)
+    # fyy = grad_y[1:, :-1] - grad_y[:-1, :-1]
+    # fxx = grad_x[:-1, 1:] - grad_x[:-1, :-1]
     laplacian = fxx + fyy
     m, n, p = laplacian.shape
 
@@ -108,7 +110,7 @@ def poisson_reconstruct2(grad_x, grad_y, boundarysrc=None):
     gxx = grad_x[:-1, 1:] - grad_x[:-1, :-1]
 
     if boundarysrc is None:
-        boundarysrc = numpy.zeros((grad_y).shape)
+        boundarysrc = numpy.zeros(grad_y.shape)
 
     f = numpy.zeros(boundarysrc.shape)
     f[:-1, 1:] += gxx
