@@ -12,8 +12,7 @@ from src.watermark_reconstruct import *
 # if there is no any yet
 #
 # folder name of preprocessed images with watermarks
-dir_images = './images_dataset/img_prepared'
-dir_images_raw = './images_dataset/img_raw'
+dir_images = './images_dataset/domofond'
 files_number = 25
 image_size = 1280
 
@@ -23,52 +22,57 @@ if not os.path.isdir(dir_images):
 files = os.listdir(dir_images)
 
 if len(files) == 0:
-    if not os.path.isdir(dir_images_raw):
-        os.mkdir(dir_images_raw)
-
-    files_raw = os.listdir(dir_images_raw)
-
-    if len(files_raw) == 0:
-        photo_scrape(dir_images_raw, files_number)
-    else:
-        print("All files downloaded")
-
-    preprocess(dir_images_raw, dir_images, image_size)
+    photo_scrape(dir_images, files_number)
 else:
-    print("All files prepared")
+    print("All files downloaded")
+
 # -------------------------------------------------------------------------
 
 # INITIAL WATERMARK DETECTION ---------------------------------------------
 # get watermark gradient with median of images set TODO: make iterations possible
-Wm_x, Wm_y, num_images = estimate_watermark(dir_images)
+images_raw = read_images(dir_images)
 
-# crop watermark area and get cropped gradient
-cropped_Wm_x, cropped_Wm_y = crop_watermark(Wm_x, Wm_y)
+for i in range(4):
+    images = preprocess(images_raw, image_size)
 
-# reconstruct watermark image with poisson
-W_m = poisson_reconstruct(cropped_Wm_x, cropped_Wm_y)
-# est = poisson_reconstruct(Wm_x, Wm_y, np.zeros(Wm_x.shape)[:,:,0])
 
-# get random photo
-img_name = rnd.choice(os.listdir(dir_images))
-img_sample = cv2.imread(os.path.join(dir_images, img_name))
+    Wm_x, Wm_y, num_images = estimate_watermark(images)
 
-# detect watermark on random photo
-img_marked, wm_start, wm_end = watermark_detector(img_sample, cropped_Wm_x, cropped_Wm_y)
+    # crop watermark area and get cropped gradient
+    cropped_Wm_x, cropped_Wm_y = crop_watermark(Wm_x, Wm_y)
+
+    # reconstruct watermark image with poisson
+    W_m = poisson_reconstruct(cropped_Wm_x, cropped_Wm_y)
+    # est = poisson_reconstruct(Wm_x, Wm_y, np.zeros(Wm_x.shape)[:,:,0])
+
+    # # get random photo
+    # img_sample = rnd.choice(images)
+    # # img_sample = cv2.imread(os.path.join(dir_images, img_name))
+    #
+    # # detect watermark on random photo
+    # img_marked, wm_start, wm_end = watermark_detector(img_sample, cropped_Wm_x, cropped_Wm_y)
+
+    images_raw = []
+    for img in images:
+        img_marked, wm_start, wm_end = watermark_detector(img, cropped_Wm_x, cropped_Wm_y)
+        images_raw.append(img[wm_start[0]:wm_start[1], wm_start[0] + wm_end[0]:wm_start[1] + wm_end[1], :])
+
+    i += 1
+
+    # plotting images
+    images_for_plotting = [img_marked, W_m]
+
+    for img in images_for_plotting:
+        img_res = img[:, :, ::-1]
+        plt.figure(dpi=600)
+        plt.imshow(img_res)
+        plt.xticks([]), plt.yticks([])
+        plt.show()
+    # -------------------------------------------------------------------------
+
 
 # We are done with watermark estimation
 # W_m is the cropped watermark
-# -------------------------------------------------------------------------
-
-# plotting images
-images_for_plotting = [img_marked, W_m]
-
-for img in images_for_plotting:
-    img_res = img[:, :, ::-1]
-    plt.figure(dpi=600)
-    plt.imshow(img_res)
-    plt.xticks([]), plt.yticks([])
-    plt.show()
 # -------------------------------------------------------------------------
 
 #  ---------------------------------------------

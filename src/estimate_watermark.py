@@ -12,24 +12,11 @@ import scipy.fftpack
 KERNEL_SIZE = 3
 
 
-def estimate_watermark(directory):
+def estimate_watermark(images):
     """
     Given a folder, estimate the watermark (grad(W) = median(grad(J)))
     Also, give the list of gradients, so that further processing can be done on it
     """
-    if not os.path.exists(directory):
-        warnings.warn("Folder does not exist.", UserWarning)
-        return None
-
-    images = []
-    files = os.listdir(directory)
-    # Get all the images
-    for file in files:
-        img = cv2.imread(os.sep.join([directory, file]))
-        if img is not None:
-            images.append(img)
-        else:
-            print("%s not found." % (file))
 
     # Compute gradients
     print("Computing images gradients.")
@@ -165,6 +152,7 @@ def watermark_detector(img, gx, gy, thresh_low=200, thresh_high=220, printval=Fa
     x, y = int(index[0] - rect[0] / 2), int(index[1] - rect[1] / 2)  # 必须要为整数，所以做出调整
     im = img.copy()
     cv2.rectangle(im, (y, x), (y + rect[1], x + rect[0]), (255, 0, 0))
+
     return im, (x, y), (rect[0], rect[1])
 
 
