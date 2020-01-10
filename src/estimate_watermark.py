@@ -1,12 +1,10 @@
 import math
-import os
-import warnings
-
 import cv2
 import numpy
 import numpy as np
 import scipy
 import scipy.fftpack
+from matplotlib import pyplot as plt
 
 # Variables
 KERNEL_SIZE = 3
@@ -20,8 +18,8 @@ def estimate_watermark(images):
 
     # Compute gradients
     print("Computing images gradients.")
-    grad_x = list(map(lambda x: cv2.Sobel(x, cv2.CV_64F, 1, 0, ksize=KERNEL_SIZE), images))
-    grad_y = list(map(lambda x: cv2.Sobel(x, cv2.CV_64F, 0, 1, ksize=KERNEL_SIZE), images))
+    grad_x = list(map(lambda x: cv2.Sobel(x, cv2.CV_64F, 1, 0, ksize=KERNEL_SIZE), images.values()))
+    grad_y = list(map(lambda x: cv2.Sobel(x, cv2.CV_64F, 0, 1, ksize=KERNEL_SIZE), images.values()))
 
     # Compute median of grads
     print("Computing median gradients.")
@@ -44,6 +42,15 @@ def crop_watermark(grad_x, grad_y, threshold=0.4, boundary_size=2):
     W_mod = to_plot_normalize_image(W_mod)
     W_gray = threshold_image(np.average(W_mod, axis=2), threshold=threshold)
     x, y = np.where(W_gray == 1)
+
+    # images_for_plotting = [W_mod, W_gray]
+    #
+    # for img in images_for_plotting:
+    #     img_res = img
+    #     plt.figure(dpi=600)
+    #     plt.imshow(img_res)
+    #     plt.xticks([]), plt.yticks([])
+    #     plt.show()
 
     xm, xM = np.min(x) - boundary_size - 1, np.max(x) + boundary_size + 1
     ym, yM = np.min(y) - boundary_size - 1, np.max(y) + boundary_size + 1

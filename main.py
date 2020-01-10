@@ -12,12 +12,15 @@ from src.watermark_reconstruct import *
 # if there is no any yet
 #
 # folder name of preprocessed images with watermarks
-dir_images = './images_dataset/domofond'
+dir_images = './dataset/source'
+cropped_wm_dir = './dataset/result_' + str(''.join(rnd.choice('qwertyuiopasdfghjkl') for i in range(5))) + '/cropped'
 files_number = 25
 image_size = 1280
 
 if not os.path.isdir(dir_images):
     os.mkdir(dir_images)
+if not os.path.isdir(cropped_wm_dir):
+    os.makedirs(cropped_wm_dir)
 
 files = os.listdir(dir_images)
 
@@ -32,9 +35,8 @@ else:
 # get watermark gradient with median of images set TODO: make iterations possible
 images_raw = read_images(dir_images)
 
-for i in range(4):
+for i in range(2):
     images = preprocess(images_raw, image_size)
-
 
     Wm_x, Wm_y, num_images = estimate_watermark(images)
 
@@ -42,34 +44,38 @@ for i in range(4):
     cropped_Wm_x, cropped_Wm_y = crop_watermark(Wm_x, Wm_y)
 
     # reconstruct watermark image with poisson
-    W_m = poisson_reconstruct(cropped_Wm_x, cropped_Wm_y)
-    # est = poisson_reconstruct(Wm_x, Wm_y, np.zeros(Wm_x.shape)[:,:,0])
+    W_m = poisson_reconstruct2(cropped_Wm_x, cropped_Wm_y)
 
-    # # get random photo
+    # # detect watermark on random photo
     # img_sample = rnd.choice(images)
     # # img_sample = cv2.imread(os.path.join(dir_images, img_name))
-    #
-    # # detect watermark on random photo
     # img_marked, wm_start, wm_end = watermark_detector(img_sample, cropped_Wm_x, cropped_Wm_y)
 
-    images_raw = []
-    for img in images:
+    images_raw = {}
+    for file, img in images.items():
         img_marked, wm_start, wm_end = watermark_detector(img, cropped_Wm_x, cropped_Wm_y)
-        images_raw.append(img[wm_start[0]:wm_start[1], wm_start[0] + wm_end[0]:wm_start[1] + wm_end[1], :])
+        img_result = img[max(wm_start[0], 0):wm_start[0] + wm_end[0], max(wm_start[1], 0):wm_start[1] + wm_end[1], :]
 
+        if not img_result.any():
+            continue
+
+        cv2.imwrite((os.sep.join([os.path.abspath(cropped_wm_dir), 'it_' + str(i) + '_' + file])), img_result)
+
+        images_raw[file] = img_result
+
+    cv2.imwrite((os.sep.join([os.path.abspath(cropped_wm_dir), 'it_' + str(i) + '_' + 'watermark.jpg'])), W_m)
     i += 1
 
-    # plotting images
-    images_for_plotting = [img_marked, W_m]
-
-    for img in images_for_plotting:
-        img_res = img[:, :, ::-1]
-        plt.figure(dpi=600)
-        plt.imshow(img_res)
-        plt.xticks([]), plt.yticks([])
-        plt.show()
-    # -------------------------------------------------------------------------
-
+    # # plotting images
+    # images_for_plotting = [img_marked, W_m]
+    #
+    # for img in images_for_plotting:
+    #     img_res = img[:, :, ::-1]
+    #     plt.figure(dpi=600)
+    #     plt.imshow(img_res)
+    #     plt.xticks([]), plt.yticks([])
+    #     plt.show()
+    # # -------------------------------------------------------------------------
 
 # We are done with watermark estimation
 # W_m is the cropped watermark
