@@ -25,57 +25,48 @@ def get_cropped_images(images, cropped_Wm_x, cropped_Wm_y):
     return images_cropped
 
 
-# get estimated normalized alpha matte
 def estimate_normalized_alpha(J, W_m, threshold=170, invert=False, adaptive=False, adaptive_threshold=21,
                               c2=10):
     num_images = len(J)
+    m, n, _ = next(iter(J.values())).shape
+
     _Wm = (255 * to_plot_normalize_image(np.average(W_m, axis=2))).astype(np.uint8)
+
     if adaptive:
         thr = cv2.adaptiveThreshold(_Wm, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, adaptive_threshold, c2)
     else:
-        ret, thr = cv2.threshold(_Wm, threshold, 255, cv2.THRESH_BINARY)
+        _, thr = cv2.threshold(_Wm, threshold, 255, cv2.THRESH_BINARY)
 
     if invert:
         thr = 255 - thr
+
     thr = np.stack([thr, thr, thr], axis=2)
 
-    num, m, n, p = J.shape
-    alpha = np.zeros((num_images, m, n))
-    iterpatch = 900
+    print(f'Estimating normalized alpha using {num_images} images')
+    alpha = np.array([closed_form_matte(img, thr) for img in J.values()])
 
-    print("Estimating normalized alpha using %d images." % num_images)
-    # for all images, calculate alpha
-    for idx in range(num_images):
-        imgcopy = thr
-        alph = closed_form_matte(J[idx], imgcopy)
-        alpha[idx] = alph
-
-    alpha = np.median(alpha, axis=0)
-    return alpha
+    return np.median(alpha, axis=0)
 
 
-def estimate_blend_factor(J, W_m, alph, threshold=0.01 * 255):
-    K, m, n, p = J.shape
-    Jm = (J - W_m)
-    gx_jm = np.zeros(J.shape)
-    gy_jm = np.zeros(J.shape)
+def estimate_blend_factor(J, W_m, alpha, threshold=0.01 * 255):
+    K = len(J)
 
-    for i in range(K):
-        gx_jm[i] = cv2.Sobel(Jm[i], cv2.CV_64F, 1, 0, 3)
-        gy_jm[i] = cv2.Sobel(Jm[i], cv2.CV_64F, 0, 1, 3)
+    J = np.array(list(J.values()))
+    Jm = J - W_m
+    gx_jm = np.array([cv2.Sobel(Jm[i], cv2.CV_64F, 1, 0, 3) for i in range(K)])
+    gy_jm = np.array([cv2.Sobel(Jm[i], cv2.CV_64F, 0, 1, 3) for i in range(K)])
 
     Jm_grad = np.sqrt(gx_jm ** 2 + gy_jm ** 2)
 
-    est_Ik = alph * np.median(J, axis=0)
+    est_Ik = alpha * np.median(J, axis=0)
     gx_estIk = cv2.Sobel(est_Ik, cv2.CV_64F, 1, 0, 3)
     gy_estIk = cv2.Sobel(est_Ik, cv2.CV_64F, 0, 1, 3)
     estIk_grad = np.sqrt(gx_estIk ** 2 + gy_estIk ** 2)
 
-    C = []
-    for i in range(3):
-        c_i = np.sum(Jm_grad[:, :, :, i] * estIk_grad[:, :, i]) / np.sum(np.square(estIk_grad[:, :, i])) / K
-        print(c_i)
-        C.append(c_i)
+    C = [
+        np.sum(Jm_grad[:, :, :, i] * estIk_grad[:, :, i]) / np.sum(np.square(estIk_grad[:, :, i])) / K
+        for i in [0, 1, 2]
+    ]
 
     return C, est_Ik
 
@@ -172,11 +163,11 @@ def solve_images(J, W_m, alpha, W_init, gamma=1, beta=1, lambda_w=0.005, lambda_
 
             Wk[i] = x[:size].reshape(m, n, p)
             Ik[i] = x[size:].reshape(m, n, p)
-            plt.subplot(3, 1, 1);
+            plt.subplot(3, 1, 1)
             plt.imshow(to_plot_normalize_image(J[i]))
-            plt.subplot(3, 1, 2);
+            plt.subplot(3, 1, 2)
             plt.imshow(to_plot_normalize_image(Wk[i]))
-            plt.subplot(3, 1, 3);
+            plt.subplot(3, 1, 3)
             plt.imshow(to_plot_normalize_image(Ik[i]))
             plt.draw()
             plt.pause(0.001)

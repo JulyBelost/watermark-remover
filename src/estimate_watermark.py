@@ -17,13 +17,13 @@ def estimate_watermark(images):
 
     # Compute gradients
     print("Computing images gradients.")
-    grad_x = list(map(lambda x: cv2.Sobel(x, cv2.CV_64F, 1, 0, ksize=KERNEL_SIZE), images.values()))
-    grad_y = list(map(lambda x: cv2.Sobel(x, cv2.CV_64F, 0, 1, ksize=KERNEL_SIZE), images.values()))
+    grad_x = np.array([cv2.Sobel(x, cv2.CV_64F, 1, 0, ksize=KERNEL_SIZE) for x in images.values()])
+    grad_y = np.array([cv2.Sobel(x, cv2.CV_64F, 0, 1, ksize=KERNEL_SIZE) for x in images.values()])
 
     # Compute median of grads
     print("Computing median gradients.")
-    Wm_x = np.median(np.array(grad_x), axis=0)
-    Wm_y = np.median(np.array(grad_y), axis=0)
+    Wm_x = np.median(grad_x, axis=0)
+    Wm_y = np.median(grad_y, axis=0)
 
     num_images = len(grad_x)
 
