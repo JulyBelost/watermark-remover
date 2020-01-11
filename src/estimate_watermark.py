@@ -4,7 +4,6 @@ import numpy
 import numpy as np
 import scipy
 import scipy.fftpack
-from matplotlib import pyplot as plt
 
 # Variables
 KERNEL_SIZE = 3

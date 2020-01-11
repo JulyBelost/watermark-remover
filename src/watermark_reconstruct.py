@@ -1,39 +1,27 @@
-from matplotlib import pyplot as plt
 from scipy.sparse import linalg
-
 from src.closed_form_matting import *
 from src.estimate_watermark import *
 
 
-def get_cropped_images(foldername, num_images, start, end, shape):
+def get_cropped_images(images, cropped_Wm_x, cropped_Wm_y):
     """
     This is the part where we get all the images, extract their parts, and then add it to our matrix
     """
-    images_cropped = np.zeros((num_images,) + shape)
-    # get images
-    # Store all the watermarked images
-    # start, and end are already stored
-    # just crop and store images
-    image_paths = []
-    _s, _e = start, end
-    index = 0
+    # images_cropped = np.zeros((num_images,) + shape)
+    images_cropped = {}
 
-    # Iterate over all images
-    for r, dirs, files in os.walk(foldername):
+    for file, img in images.items():
+        img_marked, wm_start, wm_end = watermark_detector(img, cropped_Wm_x, cropped_Wm_y)
+        img_result = img[max(wm_start[0], 0):wm_start[0] + wm_end[0], max(wm_start[1], 0):wm_start[1] + wm_end[1], :]
 
-        for file in files:
-            _img = cv2.imread(os.sep.join([r, file]))
-            if _img is not None:
-                # estimate the watermark part
-                image_paths.append(os.sep.join([r, file]))
-                _img = _img[_s[0]:(_s[0] + _e[0]), _s[1]:(_s[1] + _e[1]), :]
-                # add to list images
-                images_cropped[index, :, :, :] = _img
-                index += 1
-            else:
-                print("%s not found." % file)
+        if not img_result.any():
+            continue
 
-    return images_cropped, image_paths
+        images_cropped[file] = img_result
+
+        # images_cropped[index, :, :, :] = _img
+
+    return images_cropped
 
 
 # get sobel coordinates for y
