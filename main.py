@@ -33,10 +33,10 @@ else:
 
 # INITIAL WATERMARK ESTIMATE & DETECTION -------------------------------------------------------------------------------
 # get watermark gradient with median of images set TODO: make iterations possible
-images_raw = read_images(dir_images)
+J = read_images(dir_images)
 
 for i in range(1):
-    images = preprocess(images_raw, image_size)
+    images = preprocess(J, image_size)
 
     Wm_x, Wm_y, num_images = estimate_watermark(images)
 
@@ -51,12 +51,13 @@ for i in range(1):
     # # img_sample = cv2.imread(os.path.join(dir_images, img_name))
     # img_marked, wm_start, wm_end = watermark_detector(img_sample, cropped_Wm_x, cropped_Wm_y)
 
-    images_raw = get_cropped_images(images, cropped_Wm_x, cropped_Wm_y)
+    J = get_cropped_images(images, cropped_Wm_x, cropped_Wm_y)
 
-    lambda im: cv2.imwrite(
-        (os.sep.join([os.path.abspath(cropped_wm_dir), 'it_' + str(i) + '_' + im[0]])),
-        im[1]
-    ), images_raw.items()
+    for f, im in J.items():
+        cv2.imwrite(
+            (os.sep.join([os.path.abspath(cropped_wm_dir), 'it_' + str(i) + '_' + f])),
+            im
+        )
 
     cv2.imwrite((os.sep.join([os.path.abspath(cropped_wm_dir), 'it_' + str(i) + '_' + 'watermark.jpg'])), W_m)
     i += 1
@@ -70,39 +71,30 @@ for i in range(1):
 # MULTI-IMAGE MATTING & RECONSTRUCTION ---------------------------------------------------------------------------------
 # Wm = W_m - (255*to_plot_normalize_image(W_m))
 # Wm = W_m - W_m.min()
+Wm = W_m.copy()
 
 # get threshold of W_m for alpha matte estimate
-alph_est = estimate_normalized_alpha(J, Wm, num_images)
-alph = np.stack([alph_est, alph_est, alph_est], axis=2)
-C, est_Ik = estimate_blend_factor(J, Wm, alph)
+alpha_n_1d = estimate_normalized_alpha(J, Wm)
+alpha_n = np.stack([alpha_n_1d, alpha_n_1d, alpha_n_1d], axis=2)
+C, est_Ik = estimate_blend_factor(J, Wm, alpha_n)
 
-# plot_images([Wm, W_m])
-# cv2.imwrite((os.sep.join([os.path.abspath(cropped_wm_dir),  'twt.jpg'])), Wm)
-
-alpha = alph.copy()
+alpha = np.zeros(alpha_n.shape)
 for i in range(3):
-    alpha[:, :, i] = C[i] * alpha[:, :, i]
+    alpha[:, :, i] = C[i] * alpha_n[:, :, i]
 
 Wm = Wm + alpha * est_Ik
-
-img_res = Wm[:, :, ::-1]
-plt.figure(dpi=600)
-plt.imshow(Wm)
-plt.xticks([]), plt.yticks([])
-plt.show()
 
 W = Wm.copy()
 for i in range(3):
     W[:, :, i] /= C[i]
 
-Jt = J[:25]
 # ----------------------------------------------------------------------------------------------------------------------
 
-Wm, J, alph, alph_est, cropped_Wm_x, cropped_Wm_y, est_Ik, Wm_x, Wm_y, img_sample, img_marked = \
-    None, None, None, None, None, None, None, None, None, None, None
+Wm, alpha_n, alph_est, cropped_Wm_x, cropped_Wm_y, est_Ik, Wm_x, Wm_y, images_raw, img_marked = \
+    None, None, None, None, None, None, None, None, None, None
 
 # now we have the values of alpha, Wm, J
 # Solve for all images
-Wk, Ik, W, alpha1 = solve_images(Jt, W_m, alpha, W)
+Wk, Ik, W, alpha1 = solve_images(J[:1], W_m, alpha, W)
 # W_m_threshold = (255*to_plot_normalize_image(np.average(W_m, axis=2))).astype(np.uint8)
 # ret, thr = cv2.threshold(W_m_threshold, 127, 255, cv2.THRESH_BINARY)
