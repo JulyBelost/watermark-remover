@@ -161,7 +161,7 @@ def get_cropped_images(images, cropped_Wm_x, cropped_Wm_y):
     return images_cropped
 
 
-def watermark_detector(img, gx, gy, thresh_low=200, thresh_high=220, printval=False):
+def watermark_detector(img, gx, gy, thresh_low=50, thresh_high=220, printval=False):
     """
     Compute a verbose edge map using Canny edge detector, take its magnitude.
     Assuming cropped values of gradients are given.
