@@ -7,12 +7,39 @@ from threading import Thread
 from src.config import hostname, password, username, database
 
 
-def photo_scrape(directory, n):
+def photo_scrape_av_df(directory, n):
+    # make the dir first
+    av_dir = os.sep.join([directory, 'av'])
+    df_dir = os.sep.join([directory, 'df'])
+
+    if not os.path.isdir(av_dir):
+        os.mkdir(av_dir)
+    if not os.path.isdir(df_dir):
+        os.mkdir(df_dir)
+
+    links = query_links(n, 'df')
+    thread_list = []
+
+    # start threads
+    for index in range(n):
+        th = Thread(target=save_image, args=(links[index], df_dir))
+        thread_list.append(th)
+        th.start()
+        th = Thread(target=save_image, args=(links[index].replace('_dom', ''), av_dir))
+        thread_list.append(th)
+        th.start()
+
+    # join
+    for th in thread_list:
+        th.join()
+
+
+def photo_scrape(directory, n, wm_type):
     # make the dir first
     if not os.path.isdir(directory):
         os.mkdir(directory)
 
-    links = query_links(n)
+    links = query_links(n, wm_type)
     thread_list = []
 
     # start threads
@@ -40,14 +67,16 @@ def save_image(link, directory):
         print("Couldn't download from link: " + link)
 
 
-def query_links(n):
+def query_links(n, wm_type):
     pgsql = database_connect()
     cur = pgsql.cursor()
     cur.execute("""SELECT photos 
                     FROM ads
-                    WHERE status='open' 
-                        AND ads_type='df'
-                    ORDER BY random()"""
+                    WHERE status='open'
+                        AND photos IS NOT NULL
+                        AND photos!='[]'
+                        AND ads_type=""" + f"'{wm_type}'"
+                f"ORDER BY random()"
                 f"LIMIT {n}")
     photos = []
     for photo_json in cur.fetchall():
@@ -61,7 +90,7 @@ def query_links(n):
 
     pgsql.close()
 
-    return photos
+    return photos[:n]
 
 
 def database_connect():
@@ -83,10 +112,10 @@ if __name__ == "__main__":
     # else:
     # define the folder
     if args.folder is None:
-        directory = "."
+        folder = "."
     else:
-        directory = args.folder
+        folder = args.folder
 
-    photo_scrape(directory, 10)
+    photo_scrape(folder, 10)
 
     print("Done.")

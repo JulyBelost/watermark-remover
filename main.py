@@ -1,8 +1,4 @@
-import copy
 from itertools import islice
-
-import cv2
-import os
 import random as rnd
 from src.estimate_watermark import *
 from src.preprocess import *
@@ -15,20 +11,20 @@ from src.watermark_reconstruct import *
 # if there is no any yet
 #
 # folder name of preprocessed images with watermarks
-dir_images = './dataset/domofond2'
-cropped_wm_dir = './dataset/result_' + str(''.join(rnd.choice('qwertyuiopasdfghjkl') for i in range(5))) + '/cropped'
-files_number = 25
+wm_type = 'ci'
+source = 'src1'
+dir_images = f'./dataset/{source}'
+cropped_wm_dir = f'./dataset/{source}_' + str(''.join(rnd.choice('qwertyuiopasdfghjkl') for i in range(5)))  # + '/cropped'
+files_number = 20
 image_size = 1280
 
 if not os.path.isdir(dir_images):
     os.mkdir(dir_images)
-if not os.path.isdir(cropped_wm_dir):
-    os.makedirs(cropped_wm_dir)
 
 files = os.listdir(dir_images)
 
 if len(files) == 0:
-    photo_scrape(dir_images, files_number)
+    photo_scrape(dir_images, files_number, wm_type)
 else:
     print("All files downloaded")
 
@@ -36,10 +32,14 @@ else:
 
 # INITIAL WATERMARK ESTIMATE & DETECTION -------------------------------------------------------------------------------
 # get watermark gradient with median of images set TODO: make iterations possible
+if not os.path.isdir(cropped_wm_dir):
+    os.makedirs(cropped_wm_dir)
+
 J = read_images(dir_images)
 
 for i in range(1):
     images = preprocess(J, image_size)
+    # images.update(preprocess(J, image_size, 'constant'))
 
     Wm_x, Wm_y, num_images = estimate_watermark(images)
 
