@@ -4,27 +4,6 @@ from src.estimate_watermark import *
 from matplotlib import pyplot as plt
 
 
-def get_cropped_images(images, cropped_Wm_x, cropped_Wm_y):
-    """
-    This is the part where we get all the images, extract their parts, and then add it to our matrix
-    """
-    # images_cropped = np.zeros((num_images,) + shape)
-    images_cropped = {}
-
-    for file, img in images.items():
-        img_marked, wm_start, wm_end = watermark_detector(img, cropped_Wm_x, cropped_Wm_y)
-        img_result = img[max(wm_start[0], 0):wm_start[0] + wm_end[0], max(wm_start[1], 0):wm_start[1] + wm_end[1], :]
-
-        if not img_result.any():
-            continue
-
-        images_cropped[file] = img_result
-
-        # images_cropped[index, :, :, :] = _img
-
-    return images_cropped
-
-
 def estimate_normalized_alpha(J, W_m, threshold=170, invert=False, adaptive=False, adaptive_threshold=21,
                               c2=10):
     num_images = len(J)

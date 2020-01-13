@@ -12,7 +12,7 @@ from src.watermark_reconstruct import *
 #
 # folder name of preprocessed images with watermarks
 wm_type = 'ci'
-source = 'src1'
+source = 'src2'
 dir_images = f'./dataset/{source}'
 cropped_wm_dir = f'./dataset/{source}_' + str(''.join(rnd.choice('qwertyuiopasdfghjkl') for i in range(5)))  # + '/cropped'
 files_number = 20

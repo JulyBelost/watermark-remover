@@ -4,6 +4,7 @@ import numpy
 import numpy as np
 import scipy
 import scipy.fftpack
+from src.preprocess import plot_images
 
 # Variables
 KERNEL_SIZE = 3
@@ -139,6 +140,27 @@ def poisson_reconstruct2(grad_x, grad_y, boundarysrc=None):
     return result
 
 
+def get_cropped_images(images, cropped_Wm_x, cropped_Wm_y):
+    """
+    This is the part where we get all the images, extract their parts, and then add it to our matrix
+    """
+    # images_cropped = np.zeros((num_images,) + shape)
+    images_cropped = {}
+
+    for file, img in images.items():
+        img_marked, wm_start, wm_end = watermark_detector(img, cropped_Wm_x, cropped_Wm_y)
+        img_result = img[max(wm_start[0], 0):wm_start[0] + wm_end[0], max(wm_start[1], 0):wm_start[1] + wm_end[1], :]
+
+        if not img_result.any():
+            continue
+
+        images_cropped[file] = img_result
+
+        # images_cropped[index, :, :, :] = _img
+
+    return images_cropped
+
+
 def watermark_detector(img, gx, gy, thresh_low=200, thresh_high=220, printval=False):
     """
     Compute a verbose edge map using Canny edge detector, take its magnitude.
@@ -149,6 +171,8 @@ def watermark_detector(img, gx, gy, thresh_low=200, thresh_high=220, printval=Fa
 
     img_edgemap = (cv2.Canny(img, thresh_low, thresh_high))
     chamfer_dist = cv2.filter2D(img_edgemap.astype(float), -1, Wm)
+
+    # plot_images([Wm, img_edgemap, chamfer_dist], False)
 
     rect = Wm.shape
     index = np.unravel_index(np.argmax(chamfer_dist), img.shape[:-1])
