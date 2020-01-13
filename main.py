@@ -1,4 +1,5 @@
 import copy
+from itertools import islice
 
 import cv2
 import os
@@ -14,7 +15,7 @@ from src.watermark_reconstruct import *
 # if there is no any yet
 #
 # folder name of preprocessed images with watermarks
-dir_images = './dataset/domofond'
+dir_images = './dataset/domofond2'
 cropped_wm_dir = './dataset/result_' + str(''.join(rnd.choice('qwertyuiopasdfghjkl') for i in range(5))) + '/cropped'
 files_number = 25
 image_size = 1280
@@ -76,7 +77,7 @@ for i in range(1):
 Wm = W_m.copy()
 
 # get threshold of W_m for alpha matte estimate
-alpha_n = estimate_normalized_alpha(J, Wm)
+alpha_n = estimate_normalized_alpha(J, Wm, adaptive=True)
 alpha_n = np.stack([alpha_n, alpha_n, alpha_n], axis=2)
 
 C, est_Ik = estimate_blend_factor(J, Wm, alpha_n)
@@ -94,7 +95,14 @@ cv2.imwrite((os.sep.join([os.path.abspath(cropped_wm_dir), 'watermark.jpg'])), W
 #     None, None, None, None, None, None, None, None, None, None
 
 # now we have the values of alpha, Wm, J
-Wk, Ik, W, alpha1 = solve_images(np.array([next(iter(J.values()))]), Wm, alpha, W)
+# Jk = np.array([next(iter(J.values()))])
+Jk = np.array(list(islice(J.values(), 5)))
+Wk, Ik, W, alpha1 = solve_images(Jk, W_m, alpha, W)
+cv2.imwrite((os.sep.join([os.path.abspath(cropped_wm_dir), 'Wk.jpg'])), Wk)
+cv2.imwrite((os.sep.join([os.path.abspath(cropped_wm_dir), 'Ik.jpg'])), Ik[0])
+cv2.imwrite((os.sep.join([os.path.abspath(cropped_wm_dir), 'W.jpg'])), W)
+cv2.imwrite((os.sep.join([os.path.abspath(cropped_wm_dir), 'alpha.jpg'])), alpha1)
 plot_images([Ik[0]])
+
 # W_m_threshold = (255*to_plot_normalize_image(np.average(W_m, axis=2))).astype(np.uint8)
 # ret, thr = cv2.threshold(W_m_threshold, 127, 255, cv2.THRESH_BINARY)

@@ -177,9 +177,9 @@ def solve_images(J, W_m, alpha, W_init, gamma=1, beta=1, lambda_w=0.005, lambda_
         print("Step 2")
         W = np.median(Wk, axis=0)
 
-        plt.imshow(to_plot_normalize_image(W))
-        plt.draw()
-        plt.pause(0.001)
+        # plt.imshow(to_plot_normalize_image(W))
+        # plt.draw()
+        # plt.pause(0.001)
 
         # Step 3
         print("Step 3")
@@ -212,9 +212,9 @@ def solve_images(J, W_m, alpha, W_init, gamma=1, beta=1, lambda_w=0.005, lambda_
 
         alpha = linalg.spsolve(A1, b1).reshape(m, n, p)
 
-        plt.imshow(to_plot_normalize_image(alpha))
-        plt.draw()
-        plt.pause(0.001)
+        # plt.imshow(to_plot_normalize_image(alpha))
+        # plt.draw()
+        # plt.pause(0.001)
 
     return Wk, Ik, W, alpha
 
