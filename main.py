@@ -12,7 +12,7 @@ from src.watermark_reconstruct import *
 #
 # folder name of preprocessed images with watermarks
 wm_type = 'ci'
-source = 'cian'
+source = 'cian4'
 dir_images = f'./dataset/{source}'
 res_dir = f'./dataset/{source}_' + str(''.join(rnd.choice('qwertyuiopasdfghjkl') for i in range(4)))  # + '/cropped'
 files_number = 25
@@ -31,8 +31,9 @@ else:
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Thresholds -----------------------------------------------------------------------------------------------------------
-wm_detector_low_thr = 100
-wm_detector_high_thr = 220
+wm_detector_wm_thr = 0.05
+wm_detector_img_thr = 0.1
+wm_detector_tr_thr = 0.02
 wm_crop_trh = 0.1
 
 # INITIAL WATERMARK ESTIMATE & DETECTION -------------------------------------------------------------------------------
@@ -59,8 +60,10 @@ for i in range(1):
     # img_marked, wm_start, wm_end = watermark_detector(img_sample, cropped_Wm_x, cropped_Wm_y)
 
     J = get_cropped_images(J, cropped_Wm_x, cropped_Wm_y,
-                           thresh_low=wm_detector_low_thr,
-                           thresh_high=wm_detector_high_thr)
+                           wm_thr=wm_detector_wm_thr,
+                           img_thr=wm_detector_img_thr,
+                           trash_thr=wm_detector_tr_thr,
+                           )
 
     if not os.path.isdir(res_dir):
         os.makedirs(res_dir)
