@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 def plot_images(images, bgr=True):
     for img in images:
         img_res = img[:, :, ::-1] if bgr else img
-        plt.figure(dpi=600)
+        plt.figure(dpi=300)
         plt.imshow(img_res)
         plt.xticks([]), plt.yticks([])
         plt.show()
