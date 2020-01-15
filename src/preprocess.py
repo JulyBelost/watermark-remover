@@ -24,7 +24,7 @@ def read_images(raw_dir):
         if img is not None:
             images_raw[file] = img
         else:
-            print("%s not found." % (file))
+            print(f"{file} not found.")
 
     return images_raw
 
@@ -43,6 +43,6 @@ def preprocess(images_raw, size, mode='mean'):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Format : %s <foldername>" % (sys.argv[0]))
+        print(f"Format : {sys.argv[0]} <foldername>")
     else:
         preprocess(sys.argv[1])
