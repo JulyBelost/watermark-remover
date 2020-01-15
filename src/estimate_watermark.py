@@ -141,7 +141,7 @@ def poisson_reconstruct2(grad_x, grad_y, boundarysrc=None):
     return result
 
 
-def get_cropped_images(images, cropped_Wm_x, cropped_Wm_y, thresh_low=200, thresh_high=220):
+def get_cropped_images(images, cropped_Wm_x, cropped_Wm_y, wm_thr=0.05, img_thr=0.1, trash_thr=0.02):
     """
     This is the part where we get all the images, extract their parts, and then add it to our matrix
     """
@@ -150,8 +150,9 @@ def get_cropped_images(images, cropped_Wm_x, cropped_Wm_y, thresh_low=200, thres
 
     for file, img in images.items():
         img_marked, wm_start, wm_end = watermark_detector(img, cropped_Wm_x, cropped_Wm_y,
-                                                          thresh_low=thresh_low,
-                                                          thresh_high=thresh_high,
+                                                          wm_thr=wm_thr,
+                                                          img_thr=img_thr,
+                                                          trash_thr=trash_thr,
                                                           )
         img_result = img[max(wm_start[0], 0):wm_start[0] + wm_end[0], max(wm_start[1], 0):wm_start[1] + wm_end[1], :]
 
@@ -165,17 +166,24 @@ def get_cropped_images(images, cropped_Wm_x, cropped_Wm_y, thresh_low=200, thres
     return images_cropped
 
 
-def watermark_detector(img, gx, gy, thresh_low=200, thresh_high=220, printval=False):
+def watermark_detector(img, gx, gy, wm_thr=0.05, img_thr=0.1, trash_thr=0.02, printval=False):
     """
     Compute a verbose edge map using Canny edge detector, take its magnitude.
     Assuming cropped values of gradients are given.
     Returns images, start and end coordinates
     """
     Wm = (np.average(np.sqrt(np.square(gx) + np.square(gy)), axis=2))
-    Wm = threshold_image(Wm, threshold=0.05)
-
-    img_edgemap = (cv2.Canny(img, thresh_low, thresh_high))
-    chamfer_dist = cv2.filter2D(img_edgemap.astype(float), -1, Wm)
+    Wm = threshold_image(Wm, threshold=wm_thr)
+    # plot_images([Wm], False)
+    
+    img_x = cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=KERNEL_SIZE)
+    img_y = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=KERNEL_SIZE)
+    img_g = (np.average(np.sqrt(np.square(img_x) + np.square(img_y)), axis=2))
+    img_edgemap = threshold_image(img_g, threshold=img_thr, trash_thr=trash_thr, invert=True)
+    # plot_images([img_g], False)
+    
+    # img_edgemap = (cv2.Canny(img[:,:,0], thresh_low, thresh_high))
+    chamfer_dist = cv2.filter2D(img_edgemap, -1, Wm)
 
     if printval:
         plot_images([img_edgemap], False)
@@ -199,13 +207,19 @@ def to_plot_normalize_image(image):
     return (img - np.min(img)) / (np.max(img) - np.min(img))
 
 
-def threshold_image(image, threshold=0.5):
+def threshold_image(image, threshold=0.5, trash_thr=0.01, invert=False):
     """
     Threshold the images to make all its elements greater than threshold*MAX = 1
     """
     img = to_plot_normalize_image(image)
-    img[img >= threshold] = 1
-    img[img < 1] = 0
+
+    if invert:
+        img[img >= threshold] = 0
+        img[img > trash_thr] = 1
+    else:
+        img[img >= threshold] = 1
+        img[img < 1] = 0
+
     return img
 
 
