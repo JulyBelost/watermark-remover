@@ -12,10 +12,10 @@ from src.watermark_reconstruct import *
 #
 # folder name of preprocessed images with watermarks
 wm_type = 'ci'
-source = 'src2'
+source = 'cian'
 dir_images = f'./dataset/{source}'
-cropped_wm_dir = f'./dataset/{source}_' + str(''.join(rnd.choice('qwertyuiopasdfghjkl') for i in range(5)))  # + '/cropped'
-files_number = 20
+res_dir = f'./dataset/{source}_' + str(''.join(rnd.choice('qwertyuiopasdfghjkl') for i in range(4)))  # + '/cropped'
+files_number = 25
 image_size = 1280
 
 if not os.path.isdir(dir_images):
@@ -30,10 +30,13 @@ else:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+# Thresholds -----------------------------------------------------------------------------------------------------------
+wm_detector_low_thr = 100
+wm_detector_high_thr = 220
+wm_crop_trh = 0.1
+
 # INITIAL WATERMARK ESTIMATE & DETECTION -------------------------------------------------------------------------------
 # get watermark gradient with median of images set TODO: make iterations possible
-if not os.path.isdir(cropped_wm_dir):
-    os.makedirs(cropped_wm_dir)
 
 J = read_images(dir_images)
 
@@ -44,7 +47,8 @@ for i in range(1):
     Wm_x, Wm_y, num_images = estimate_watermark(images)
 
     # crop watermark area and get cropped gradient
-    cropped_Wm_x, cropped_Wm_y = crop_watermark(Wm_x, Wm_y)
+    cropped_Wm_x, cropped_Wm_y = crop_watermark_ignore_borders(Wm_x, Wm_y,
+                                                               threshold=wm_crop_trh)
 
     # reconstruct watermark image with poisson
     W_m = poisson_reconstruct2(cropped_Wm_x, cropped_Wm_y)
@@ -54,15 +58,20 @@ for i in range(1):
     # # img_sample = cv2.imread(os.path.join(dir_images, img_name))
     # img_marked, wm_start, wm_end = watermark_detector(img_sample, cropped_Wm_x, cropped_Wm_y)
 
-    J = get_cropped_images(images, cropped_Wm_x, cropped_Wm_y)
+    J = get_cropped_images(J, cropped_Wm_x, cropped_Wm_y,
+                           thresh_low=wm_detector_low_thr,
+                           thresh_high=wm_detector_high_thr)
+
+    if not os.path.isdir(res_dir):
+        os.makedirs(res_dir)
 
     for f, im in J.items():
         cv2.imwrite(
-            (os.sep.join([os.path.abspath(cropped_wm_dir), 'it_' + str(i) + '_' + f])),
+            (os.sep.join([os.path.abspath(res_dir), 'it_' + str(i) + '_' + f])),
             im
         )
 
-    cv2.imwrite((os.sep.join([os.path.abspath(cropped_wm_dir), 'it_' + str(i) + '_' + 'watermark.jpg'])), W_m)
+    cv2.imwrite((os.sep.join([os.path.abspath(res_dir), 'it_' + str(i) + '_' + 'watermark.jpg'])), W_m)
     i += 1
 
     # plot_images([W_m])
@@ -86,22 +95,22 @@ alpha = np.stack([C[i] * alpha_n[:, :, i] for i in [0, 1, 2]], axis=-1)
 Wm = Wm + alpha * est_Ik
 W = np.stack([Wm[:, :, i] / C[i] for i in [0, 1, 2]], axis=-1)
 
-cv2.imwrite((os.sep.join([os.path.abspath(cropped_wm_dir), 'watermark_0.jpg'])), W_m)
-cv2.imwrite((os.sep.join([os.path.abspath(cropped_wm_dir), 'watermark.jpg'])), W)
+cv2.imwrite((os.sep.join([os.path.abspath(res_dir), 'watermark_0.jpg'])), W_m)
+cv2.imwrite((os.sep.join([os.path.abspath(res_dir), 'watermark.jpg'])), W)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-# Wm, alpha_n, alph_est, cropped_Wm_x, cropped_Wm_y, est_Ik, Wm_x, Wm_y, images_raw, img_marked = \
-#     None, None, None, None, None, None, None, None, None, None
+# Wm, alpha_n, cropped_Wm_x, cropped_Wm_y, est_Ik, Wm_x, Wm_y, images_raw, img_marked = \
+#     None, None, None, None, None, None, None, None, None
 
 # now we have the values of alpha, Wm, J
 # Jk = np.array([next(iter(J.values()))])
 Jk = np.array(list(islice(J.values(), 5)))
 Wk, Ik, W, alpha1 = solve_images(Jk, W_m, alpha, W)
-cv2.imwrite((os.sep.join([os.path.abspath(cropped_wm_dir), 'Wk.jpg'])), Wk)
-cv2.imwrite((os.sep.join([os.path.abspath(cropped_wm_dir), 'Ik.jpg'])), Ik[0])
-cv2.imwrite((os.sep.join([os.path.abspath(cropped_wm_dir), 'W.jpg'])), W)
-cv2.imwrite((os.sep.join([os.path.abspath(cropped_wm_dir), 'alpha.jpg'])), alpha1)
+cv2.imwrite((os.sep.join([os.path.abspath(res_dir), 'Wk.jpg'])), Wk)
+cv2.imwrite((os.sep.join([os.path.abspath(res_dir), 'Ik.jpg'])), Ik[0])
+cv2.imwrite((os.sep.join([os.path.abspath(res_dir), 'W.jpg'])), W)
+cv2.imwrite((os.sep.join([os.path.abspath(res_dir), 'alpha.jpg'])), alpha1)
 plot_images([Ik[0]])
 
 # W_m_threshold = (255*to_plot_normalize_image(np.average(W_m, axis=2))).astype(np.uint8)
