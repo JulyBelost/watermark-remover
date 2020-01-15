@@ -31,6 +31,14 @@ def estimate_watermark(images):
     return Wm_x, Wm_y, num_images
 
 
+def crop_watermark_ignore_borders(grad_x, grad_y, threshold=0.4, boundary_size=2):
+
+    grad_x, grad_y = crop_watermark(grad_x, grad_y, threshold=0.4, boundary_size=-5)
+    grad_x, grad_y = crop_watermark(grad_x, grad_y, threshold=threshold, boundary_size=boundary_size)
+
+    return grad_x, grad_y
+
+
 def crop_watermark(grad_x, grad_y, threshold=0.4, boundary_size=2):
     """
     Crops the watermark by taking the edge map of magnitude of grad(W)
@@ -43,17 +51,10 @@ def crop_watermark(grad_x, grad_y, threshold=0.4, boundary_size=2):
     W_gray = threshold_image(np.average(W_mod, axis=2), threshold=threshold)
     x, y = np.where(W_gray == 1)
 
-    # images_for_plotting = [W_mod, W_gray]
-    #
-    # for img in images_for_plotting:
-    #     img_res = img
-    #     plt.figure(dpi=600)
-    #     plt.imshow(img_res)
-    #     plt.xticks([]), plt.yticks([])
-    #     plt.show()
-
     xm, xM = np.min(x) - boundary_size - 1, np.max(x) + boundary_size + 1
     ym, yM = np.min(y) - boundary_size - 1, np.max(y) + boundary_size + 1
+    xm, ym, xM, yM = max(xm, 0), max(ym, 0), min(xM, W_gray.shape[0]), min(yM, W_gray.shape[1])
+    # plot_images([W_gray, W_gray[xm:xM, ym:yM]], False)
 
     return grad_x[xm:xM, ym:yM, :], grad_y[xm:xM, ym:yM, :]
 
@@ -140,7 +141,7 @@ def poisson_reconstruct2(grad_x, grad_y, boundarysrc=None):
     return result
 
 
-def get_cropped_images(images, cropped_Wm_x, cropped_Wm_y):
+def get_cropped_images(images, cropped_Wm_x, cropped_Wm_y, thresh_low=200, thresh_high=220):
     """
     This is the part where we get all the images, extract their parts, and then add it to our matrix
     """
@@ -148,7 +149,10 @@ def get_cropped_images(images, cropped_Wm_x, cropped_Wm_y):
     images_cropped = {}
 
     for file, img in images.items():
-        img_marked, wm_start, wm_end = watermark_detector(img, cropped_Wm_x, cropped_Wm_y)
+        img_marked, wm_start, wm_end = watermark_detector(img, cropped_Wm_x, cropped_Wm_y,
+                                                          thresh_low=thresh_low,
+                                                          thresh_high=thresh_high,
+                                                          )
         img_result = img[max(wm_start[0], 0):wm_start[0] + wm_end[0], max(wm_start[1], 0):wm_start[1] + wm_end[1], :]
 
         if not img_result.any():
@@ -161,25 +165,25 @@ def get_cropped_images(images, cropped_Wm_x, cropped_Wm_y):
     return images_cropped
 
 
-def watermark_detector(img, gx, gy, thresh_low=50, thresh_high=220, printval=False):
+def watermark_detector(img, gx, gy, thresh_low=200, thresh_high=220, printval=False):
     """
     Compute a verbose edge map using Canny edge detector, take its magnitude.
     Assuming cropped values of gradients are given.
     Returns images, start and end coordinates
     """
     Wm = (np.average(np.sqrt(np.square(gx) + np.square(gy)), axis=2))
+    Wm = threshold_image(Wm, threshold=0.05)
 
     img_edgemap = (cv2.Canny(img, thresh_low, thresh_high))
     chamfer_dist = cv2.filter2D(img_edgemap.astype(float), -1, Wm)
 
-    # plot_images([Wm, img_edgemap, chamfer_dist], False)
+    if printval:
+        plot_images([img_edgemap], False)
 
     rect = Wm.shape
     index = np.unravel_index(np.argmax(chamfer_dist), img.shape[:-1])
-    if printval:
-        print(index)
 
-    x, y = int(index[0] - rect[0] / 2), int(index[1] - rect[1] / 2)  # 必须要为整数，所以做出调整
+    x, y = int(index[0] - rect[0] / 2), int(index[1] - rect[1] / 2)  # Must be an integer, so make adjustments
     im = img.copy()
     cv2.rectangle(im, (y, x), (y + rect[1], x + rect[0]), (255, 0, 0))
 
