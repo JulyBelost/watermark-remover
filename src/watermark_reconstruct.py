@@ -21,14 +21,14 @@ def estimate_normalized_alpha(J, W_m, threshold=170, invert=False, adaptive=True
     if invert:
         thr = 255 - thr
 
-    plot_images([thr], False)
+    # plot_images([thr], False)
 
     thr = np.stack([thr, thr, thr], axis=2)
 
     print(f'Estimating normalized alpha using {num_images} images')
     alpha = np.array([closed_form_matte(img, thr) for img in J])
 
-    return np.median(alpha, axis=0)
+    return np.median(alpha, axis=0), thr
 
 
 def estimate_blend_factor(J, W_m, alpha, threshold=0.01 * 255):

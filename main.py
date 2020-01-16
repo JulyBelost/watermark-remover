@@ -32,10 +32,10 @@ else:
 
 # INITIAL WATERMARK ESTIMATE & DETECTION -------------------------------------------------------------------------------
 # Thresholds -----------------------------------------------------------------------------------------------------------
-wm_crop_trh = 0.05
-wm_detector_wm_thr = 0.05
-wm_detector_img_thr = 0.1
-wm_detector_tr_thr = 0.02
+wm_crop_trh = 0.03
+wm_detector_wm_thr = 0.03
+wm_detector_img_thr = 0.05
+wm_detector_tr_thr = 0.01
 # ----------------------------------------------------------------------------------------------------------------------
 J = read_images(dir_images)
 
@@ -83,7 +83,6 @@ for i in range(1):
 
 # MULTI-IMAGE MATTING & RECONSTRUCTION ---------------------------------------------------------------------------------
 # Thresholds -----------------------------------------------------------------------------------------------------------
-alpha_thr = 170
 alpha_adapt_thr = 21
 # ----------------------------------------------------------------------------------------------------------------------
 J = [im for im in J.values() if im.shape == W_m.shape]
@@ -91,7 +90,7 @@ J = [im for im in J.values() if im.shape == W_m.shape]
 images, cropped_Wm_x, cropped_Wm_y, Wm_x, Wm_y = None, None, None, None, None
 
 # get threshold of W_m for alpha matte estimate
-alpha_n = estimate_normalized_alpha(J, W_m, threshold=alpha_thr, adaptive_threshold=alpha_adapt_thr, invert=True)
+alpha_n = estimate_normalized_alpha(J, W_m, adaptive_threshold=alpha_adapt_thr)
 alpha_n = np.stack([alpha_n, alpha_n, alpha_n], axis=2)
 cv2.imwrite((os.sep.join([os.path.abspath(res_dir), 'alpha_n.jpg'])), alpha_n)
 
@@ -108,7 +107,7 @@ cv2.imwrite((os.sep.join([os.path.abspath(res_dir), 'watermark.jpg'])), W)
 
 # Wm, alpha_n, cropped_Wm_x, cropped_Wm_y, est_Ik, Wm_x, Wm_y, images_raw, img_marked = \
 #     None, None, None, None, None, None, None, None, None
-J = np.array(J)
+J = np.array(J[:50])
 # now we have the values of alpha, Wm, J
 Wk, Ik, W, alpha1 = solve_images(J, W_m, alpha, W)
 cv2.imwrite((os.sep.join([os.path.abspath(res_dir), 'Wk.jpg'])), Wk)
