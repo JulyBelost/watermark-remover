@@ -34,7 +34,7 @@ else:
 # Thresholds -----------------------------------------------------------------------------------------------------------
 wm_crop_trh = 0.03
 wm_detector_wm_thr = 0.03
-wm_detector_img_thr = 0.05
+wm_detector_img_thr = 0.3
 wm_detector_tr_thr = 0.01
 # ----------------------------------------------------------------------------------------------------------------------
 J = read_images(dir_images)
@@ -51,6 +51,7 @@ for i in range(1):
 
     # reconstruct watermark image with poisson
     W_m = poisson_reconstruct2(cropped_Wm_x, cropped_Wm_y)
+    cv2.imwrite((os.sep.join([os.path.abspath(res_dir), 'watermark_whole.jpg'])), poisson_reconstruct2(Wm_x, Wm_y))
 
     # # detect watermark on random photo
     # img_sample = rnd.choice(images)
