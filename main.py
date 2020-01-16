@@ -12,10 +12,10 @@ from src.watermark_reconstruct import *
 #
 # folder name of preprocessed images with watermarks
 wm_type = 'ci'
-source = 'cian'
+source = 'cian' if len(sys.argv) < 3 else int(sys.argv[2])
 dir_images = f'./dataset/{source}'
 res_dir = f'./dataset/{source}_' + str(''.join(rnd.choice('qwertyuiopasdfghjkl') for i in range(4)))  # + '/cropped'
-files_number = 25 if len(sys.argv) < 2 else int(sys.argv[1])
+files_number = 25 if len(sys.argv) < 3 else int(sys.argv[1])
 image_size = 1280
 
 if not os.path.isdir(dir_images):
@@ -90,9 +90,10 @@ J = [im for im in J.values() if im.shape == W_m.shape]
 images, cropped_Wm_x, cropped_Wm_y, Wm_x, Wm_y = None, None, None, None, None
 
 # get threshold of W_m for alpha matte estimate
-alpha_n = estimate_normalized_alpha(J, W_m, adaptive_threshold=alpha_adapt_thr)
+alpha_n, thr = estimate_normalized_alpha(J, W_m, adaptive_threshold=alpha_adapt_thr)
 alpha_n = np.stack([alpha_n, alpha_n, alpha_n], axis=2)
 cv2.imwrite((os.sep.join([os.path.abspath(res_dir), 'alpha_n.jpg'])), alpha_n)
+cv2.imwrite((os.sep.join([os.path.abspath(res_dir), 'thr.jpg'])), thr)
 
 C, est_Ik = estimate_blend_factor(J, W_m, alpha_n)
 alpha = np.stack([C[i] * alpha_n[:, :, i] for i in [0, 1, 2]], axis=-1)
