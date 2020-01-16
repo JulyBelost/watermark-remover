@@ -82,7 +82,6 @@ def query_links(n, wm_type):
     photos = []
     for photo_json in cur.fetchall():
         if isinstance(photo_json[0], str):
-            print(photo_json[0])
             photo_arr = json.loads(photo_json[0])
         else:
             photo_arr = []

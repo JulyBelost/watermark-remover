@@ -86,12 +86,12 @@ for i in range(1):
 alpha_thr = 170
 alpha_adapt_thr = 21
 # ----------------------------------------------------------------------------------------------------------------------
-J = [im for im in J.values() if im.shape == W_m.shape][:4]
+J = [im for im in J.values() if im.shape == W_m.shape]
 # Wm = W_m.copy()
 images, cropped_Wm_x, cropped_Wm_y, Wm_x, Wm_y = None, None, None, None, None
 
 # get threshold of W_m for alpha matte estimate
-alpha_n = estimate_normalized_alpha(J, W_m, threshold=alpha_thr, adaptive_threshold=alpha_adapt_thr)
+alpha_n = estimate_normalized_alpha(J, W_m, threshold=alpha_thr, adaptive_threshold=alpha_adapt_thr, invert=True)
 alpha_n = np.stack([alpha_n, alpha_n, alpha_n], axis=2)
 cv2.imwrite((os.sep.join([os.path.abspath(res_dir), 'alpha_n.jpg'])), alpha_n)
 
