@@ -15,7 +15,7 @@ wm_type = 'ci'
 source = 'cian'
 dir_images = f'./dataset/{source}'
 res_dir = f'./dataset/{source}_' + str(''.join(rnd.choice('qwertyuiopasdfghjkl') for i in range(4)))  # + '/cropped'
-files_number = 25 if len(sys.argv) < 2 else sys.argv[1]
+files_number = 25 if len(sys.argv) < 2 else int(sys.argv[1])
 image_size = 1280
 
 if not os.path.isdir(dir_images):
