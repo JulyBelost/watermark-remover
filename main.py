@@ -15,7 +15,7 @@ wm_type = 'ci'
 source = 'cian'
 dir_images = f'./dataset/{source}'
 res_dir = f'./dataset/{source}_' + str(''.join(rnd.choice('qwertyuiopasdfghjkl') for i in range(4)))  # + '/cropped'
-files_number = 25
+files_number = 25 if len(sys.argv) < 2 else sys.argv[1]
 image_size = 1280
 
 if not os.path.isdir(dir_images):
@@ -108,7 +108,7 @@ cv2.imwrite((os.sep.join([os.path.abspath(res_dir), 'watermark.jpg'])), W)
 
 # Wm, alpha_n, cropped_Wm_x, cropped_Wm_y, est_Ik, Wm_x, Wm_y, images_raw, img_marked = \
 #     None, None, None, None, None, None, None, None, None
-
+J = np.array(J)
 # now we have the values of alpha, Wm, J
 Wk, Ik, W, alpha1 = solve_images(J, W_m, alpha, W)
 cv2.imwrite((os.sep.join([os.path.abspath(res_dir), 'Wk.jpg'])), Wk)
