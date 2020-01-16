@@ -75,7 +75,7 @@ def query_links(n, wm_type):
                     WHERE status='open'
                         AND photos IS NOT NULL
                         AND photos!='[]'
-                        AND photos not like '&quot'
+                        AND photos not like '%&quot%'
                         AND ads_type=""" + f"'{wm_type}'"
                 f"ORDER BY random()"
                 f"LIMIT {n}")
@@ -89,6 +89,9 @@ def query_links(n, wm_type):
 
         for photo in photo_arr:
             photos.append(photo['img'])
+
+        if len(photos) >= n:
+            break
 
     pgsql.close()
 
