@@ -12,7 +12,7 @@ from src.watermark_reconstruct import *
 #
 # folder name of preprocessed images with watermarks
 wm_type = 'ci'
-source = 'cian' if len(sys.argv) < 3 else int(sys.argv[2])
+source = 'cian' if len(sys.argv) < 3 else str(sys.argv[2])
 dir_images = f'./dataset/{source}'
 res_dir = f'./dataset/{source}_' + str(''.join(rnd.choice('qwertyuiopasdfghjkl') for i in range(4)))  # + '/cropped'
 files_number = 25 if len(sys.argv) < 3 else int(sys.argv[1])
