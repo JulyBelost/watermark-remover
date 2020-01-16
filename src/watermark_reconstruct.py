@@ -4,12 +4,14 @@ from src.estimate_watermark import *
 from matplotlib import pyplot as plt
 
 
-def estimate_normalized_alpha(J, W_m, threshold=170, invert=False, adaptive=False, adaptive_threshold=21,
+def estimate_normalized_alpha(J, W_m, threshold=170, invert=False, adaptive=True, adaptive_threshold=21,
                               c2=10):
     num_images = len(J)
-    m, n, _ = next(iter(J.values())).shape
+    m, n, _ = J[0].shape
 
-    _Wm = (255 * to_plot_normalize_image(np.average(W_m, axis=2))).astype(np.uint8)
+    # _Wm = (255 * to_plot_normalize_image(np.average(W_m, axis=2))).astype(np.uint8)
+    _Wm = (np.average(W_m, axis=2)).astype(np.uint8)
+    plot_images([_Wm], False)
 
     if adaptive:
         thr = cv2.adaptiveThreshold(_Wm, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, adaptive_threshold, c2)
@@ -19,10 +21,12 @@ def estimate_normalized_alpha(J, W_m, threshold=170, invert=False, adaptive=Fals
     if invert:
         thr = 255 - thr
 
+    plot_images([thr], False)
+
     thr = np.stack([thr, thr, thr], axis=2)
 
     print(f'Estimating normalized alpha using {num_images} images')
-    alpha = np.array([closed_form_matte(img, thr) for img in J.values()])
+    alpha = np.array([closed_form_matte(img, thr) for img in J])
 
     return np.median(alpha, axis=0)
 
@@ -30,7 +34,7 @@ def estimate_normalized_alpha(J, W_m, threshold=170, invert=False, adaptive=Fals
 def estimate_blend_factor(J, W_m, alpha, threshold=0.01 * 255):
     K = len(J)
 
-    J = np.array(list(J.values()))
+    J = np.array(J)
     Jm = J - W_m
     gx_jm = np.array([cv2.Sobel(Jm[i], cv2.CV_64F, 1, 0, 3) for i in range(K)])
     gy_jm = np.array([cv2.Sobel(Jm[i], cv2.CV_64F, 0, 1, 3) for i in range(K)])

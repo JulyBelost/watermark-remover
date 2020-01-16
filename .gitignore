@@ -10,3 +10,4 @@ Dekel_*
 *.npc
 /src/config.py
 /dataset/
+/.ipynb_checkpoints/

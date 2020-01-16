@@ -12,7 +12,7 @@ from src.watermark_reconstruct import *
 #
 # folder name of preprocessed images with watermarks
 wm_type = 'ci'
-source = 'cian4'
+source = 'cian'
 dir_images = f'./dataset/{source}'
 res_dir = f'./dataset/{source}_' + str(''.join(rnd.choice('qwertyuiopasdfghjkl') for i in range(4)))  # + '/cropped'
 files_number = 25
@@ -30,15 +30,13 @@ else:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+# INITIAL WATERMARK ESTIMATE & DETECTION -------------------------------------------------------------------------------
 # Thresholds -----------------------------------------------------------------------------------------------------------
+wm_crop_trh = 0.05
 wm_detector_wm_thr = 0.05
 wm_detector_img_thr = 0.1
 wm_detector_tr_thr = 0.02
-wm_crop_trh = 0.1
-
-# INITIAL WATERMARK ESTIMATE & DETECTION -------------------------------------------------------------------------------
-# get watermark gradient with median of images set TODO: make iterations possible
-
+# ----------------------------------------------------------------------------------------------------------------------
 J = read_images(dir_images)
 
 for i in range(1):
@@ -84,19 +82,24 @@ for i in range(1):
 # ----------------------------------------------------------------------------------------------------------------------
 
 # MULTI-IMAGE MATTING & RECONSTRUCTION ---------------------------------------------------------------------------------
-# Wm = W_m - (255*to_plot_normalize_image(W_m))
-# Wm = W_m - W_m.min()
-Wm = W_m.copy()
+# Thresholds -----------------------------------------------------------------------------------------------------------
+alpha_thr = 170
+alpha_adapt_thr = 21
+# ----------------------------------------------------------------------------------------------------------------------
+J = [im for im in J.values() if im.shape == W_m.shape][:4]
+# Wm = W_m.copy()
+images, cropped_Wm_x, cropped_Wm_y, Wm_x, Wm_y = None, None, None, None, None
 
 # get threshold of W_m for alpha matte estimate
-alpha_n = estimate_normalized_alpha(J, Wm, adaptive=True)
+alpha_n = estimate_normalized_alpha(J, W_m, threshold=alpha_thr, adaptive_threshold=alpha_adapt_thr)
 alpha_n = np.stack([alpha_n, alpha_n, alpha_n], axis=2)
+cv2.imwrite((os.sep.join([os.path.abspath(res_dir), 'alpha_n.jpg'])), alpha_n)
 
-C, est_Ik = estimate_blend_factor(J, Wm, alpha_n)
+C, est_Ik = estimate_blend_factor(J, W_m, alpha_n)
 alpha = np.stack([C[i] * alpha_n[:, :, i] for i in [0, 1, 2]], axis=-1)
 
-Wm = Wm + alpha * est_Ik
-W = np.stack([Wm[:, :, i] / C[i] for i in [0, 1, 2]], axis=-1)
+W_m = W_m + alpha * est_Ik
+W = np.stack([W_m[:, :, i] / C[i] for i in [0, 1, 2]], axis=-1)
 
 cv2.imwrite((os.sep.join([os.path.abspath(res_dir), 'watermark_0.jpg'])), W_m)
 cv2.imwrite((os.sep.join([os.path.abspath(res_dir), 'watermark.jpg'])), W)
@@ -107,14 +110,17 @@ cv2.imwrite((os.sep.join([os.path.abspath(res_dir), 'watermark.jpg'])), W)
 #     None, None, None, None, None, None, None, None, None
 
 # now we have the values of alpha, Wm, J
-# Jk = np.array([next(iter(J.values()))])
-Jk = np.array(list(islice(J.values(), 5)))
-Wk, Ik, W, alpha1 = solve_images(Jk, W_m, alpha, W)
+Wk, Ik, W, alpha1 = solve_images(J, W_m, alpha, W)
 cv2.imwrite((os.sep.join([os.path.abspath(res_dir), 'Wk.jpg'])), Wk)
 cv2.imwrite((os.sep.join([os.path.abspath(res_dir), 'Ik.jpg'])), Ik[0])
 cv2.imwrite((os.sep.join([os.path.abspath(res_dir), 'W.jpg'])), W)
 cv2.imwrite((os.sep.join([os.path.abspath(res_dir), 'alpha.jpg'])), alpha1)
+for i in range(Ik.shape[0]):
+    cv2.imwrite(
+        (os.sep.join([os.path.abspath(res_dir), 'Ik_' + str(i) + '.jpg'])),
+        Ik[i, ...]
+    )
 plot_images([Ik[0]])
-
+print('done')
 # W_m_threshold = (255*to_plot_normalize_image(np.average(W_m, axis=2))).astype(np.uint8)
 # ret, thr = cv2.threshold(W_m_threshold, 127, 255, cv2.THRESH_BINARY)
